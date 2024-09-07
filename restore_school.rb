@@ -108,11 +108,31 @@ def dump_group_keyword_lists
   system(cmd)
   process_result($?.exitstatus, dump_file)
 end
+
+def dump_children
+  dump_file = 'restore_children.sql'
+  sql = "SELECT gm.memberable_id FROM schools s JOIN groups g ON s.id = g.school_id JOIN group_members gm ON g.id = gm.group_id WHERE s.id = #{@school_id} AND gm.memberable_type = 'Child'"
+
+  cmd = %(mysqldump -h #{@db_host} --ssl_ca=/usr/local/share/ca-certificates/azure_mariadb_ca.pem -u #{@db_user} -p#{@db_password} --no-create-info --lock-all-tables #{@db_name} children --where="id IN (#{sql})" > #{dump_file} )
+  system(cmd)
+  process_result($?.exitstatus, dump_file)
+end
+
+def dump_users
+  dump_file = 'restore_users.sql'
+  sql = "SELECT gm.memberable_id FROM schools s JOIN groups g ON s.id = g.school_id JOIN group_members gm ON g.id = gm.group_id WHERE s.id = #{@school_id} AND gm.memberable_type = 'User'"
+
+  cmd = %(mysqldump -h #{@db_host} --ssl_ca=/usr/local/share/ca-certificates/azure_mariadb_ca.pem -u #{@db_user} -p#{@db_password} --no-create-info --lock-all-tables #{@db_name} users --where="id IN (#{sql})" > #{dump_file} )
+  system(cmd)
+  process_result($?.exitstatus, dump_file)
+end
 ##### main run #####
 
 dump_core_tables
 dump_school_table
 dump_group_members
+dump_children
+dump_users
 
 output_file = 'total_dump.sql'
 
