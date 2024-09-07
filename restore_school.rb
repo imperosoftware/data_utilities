@@ -74,42 +74,40 @@ end
 def dump_core_tables
   @models.each do |model|
     table_name = model.tableize
+    dump_file = "restore_#{table_name}.sql"
     system dump_cmd(table_name)
+    process_result($?.exitstatus, dump_file)
+  end
+end
 
-    if $?.exitstatus == 0
-      @dump_files << "restore_#{table_name}.sql"
-      puts "Successful dump! Data saved to restore_#{table_name}.sql"
-    else
-      puts '*** Failed dump! Check your credentials'
-    end
+def process_result(status, dump_file)
+  if status == 0
+    @dump_files << dump_file
+    puts "Successful dump! Data saved to #{dump_file}"
+  else
+    puts '*** Failed dump! Check your credentials'
   end
 end
 
 def dump_school_table
   cmd = %(mysqldump -h #{@db_host} --ssl_ca=/usr/local/share/ca-certificates/azure_mariadb_ca.pem -u #{@db_user} -p#{@db_password} --no-create-info #{@db_name} schools --where="id=#{@school_id}" > restore_school.sql )
   system(cmd)
-
-  if $?.exitstatus == 0
-    @dump_files << 'restore_school.sql'
-    puts 'Successful dump! Data saved to restore_school.sql'
-  else
-    puts '*** Failed dump! Check your credentials'
-  end
+  process_result($?.exitstatus, 'restore_school.sql')
 end
 
 def dump_group_members
   dump_file = 'restore_group_members.sql'
   cmd = %(mysqldump -h #{@db_host} --ssl_ca=/usr/local/share/ca-certificates/azure_mariadb_ca.pem -u #{@db_user} -p#{@db_password} --no-create-info --lock-all-tables #{@db_name} group_members --where="group_id IN (SELECT id FROM groups WHERE school_id=#{@school_id})" > #{dump_file} )
   system(cmd)
-
-  if $?.exitstatus == 0
-    @dump_files << dump_file
-    puts 'Successful dump! Data saved to restore_school.sql'
-  else
-    puts '*** Failed dump! Check your credentials'
-  end
+  process_result($?.exitstatus, dump_file)
 end
 
+def dump_group_keyword_lists
+  dump_file = 'restore_group_keyword_lists.sql'
+  cmd = %(mysqldump -h #{@db_host} --ssl_ca=/usr/local/share/ca-certificates/azure_mariadb_ca.pem -u #{@db_user} -p#{@db_password} --no-create-info --lock-all-tables #{@db_name} group_keyword_lists --where="group_id IN (SELECT id FROM groups WHERE school_id=#{@school_id})" > #{dump_file} )
+  system(cmd)
+  process_result($?.exitstatus, dump_file)
+end
 ##### main run #####
 
 dump_core_tables
@@ -128,5 +126,9 @@ File.open(output_file, 'w') do |outfile|
 end
 
 puts "-----> Dump file #{output_file} has been created."
-puts 'now deleting temporary files...'
-@dump_files.each { |f| File.delete(f) }
+print 'now deleting temporary files '
+@dump_files.each do |f|
+  print '.'
+  File.delete(f)
+end
+puts 'Done!'
