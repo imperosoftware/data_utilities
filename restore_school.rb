@@ -60,6 +60,13 @@ def dependent_associations(model)
   end
 end
 
+# Method to find all foreign keys of a model
+def foreign_keys(model)
+  model.reflect_on_all_associations(:belongs_to).map do |association|
+    association.foreign_key
+  end
+end
+
 def dump_cmd(db_table)
   %(mysqldump -h #{@db_host} --ssl_ca=/usr/local/share/ca-certificates/azure_mariadb_ca.pem -u #{@db_user} -p#{@db_password} --no-create-info #{@db_name} #{db_table} --where="school_id=#{@school_id}" > restore_#{db_table}.sql )
 end
@@ -67,18 +74,14 @@ end
 def dump_core_tables
   @models.each do |model|
     table_name = model.tableize
-    dependent_tables = dependent_associations(model).map do |assoc|
-      assoc.name if assoc.options[:dependent] == :destroy
-    end
-    dependent_tables.each { |t| puts "for #{model}: #{t}" }
-    # system dump_cmd(table_name)
+    system dump_cmd(table_name)
 
-    # if $?.exitstatus == 0
-    #   @dump_files << "restore_#{table_name}.sql"
-    #   puts "Successful dump! Data saved to restore_#{table_name}.sql"
-    # else
-    #   puts '*** Failed dump! Check your credentials'
-    # end
+    if $?.exitstatus == 0
+      @dump_files << "restore_#{table_name}.sql"
+      puts "Successful dump! Data saved to restore_#{table_name}.sql"
+    else
+      puts '*** Failed dump! Check your credentials'
+    end
   end
 end
 
@@ -94,22 +97,36 @@ def dump_school_table
   end
 end
 
+def dump_group_members
+  dump_file = 'restore_group_members.sql'
+  cmd = %(mysqldump -h #{@db_host} --ssl_ca=/usr/local/share/ca-certificates/azure_mariadb_ca.pem -u #{@db_user} -p#{@db_password} --no-create-info --lock-all-tables #{@db_name} group_members --where="group_id IN (SELECT id FROM groups WHERE school_id=#{@school_id})" > #{dump_file} )
+  system(cmd)
+
+  if $?.exitstatus == 0
+    @dump_files << dump_file
+    puts 'Successful dump! Data saved to restore_school.sql'
+  else
+    puts '*** Failed dump! Check your credentials'
+  end
+end
+
 ##### main run #####
 
 dump_core_tables
-# dump_school_table
+dump_school_table
+dump_group_members
 
-# output_file = 'total_dump.sql'
+output_file = 'total_dump.sql'
 
-# File.open(output_file, 'w') do |outfile|
-#   @dump_files.each do |file|
-#     File.open(file, 'r') do |infile|
-#       outfile.write(infile.read)
-#       outfile.write("\n")
-#     end
-#   end
-# end
+File.open(output_file, 'w') do |outfile|
+  @dump_files.each do |file|
+    File.open(file, 'r') do |infile|
+      outfile.write(infile.read)
+      outfile.write("\n")
+    end
+  end
+end
 
-# puts "-----> Dump file #{output_file} has been created."
-# puts 'now deleting temporary files...'
-# @dump_files.each { |f| File.delete(f) }
+puts "-----> Dump file #{output_file} has been created."
+puts 'now deleting temporary files...'
+@dump_files.each { |f| File.delete(f) }

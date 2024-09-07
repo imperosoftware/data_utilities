@@ -1,8 +1,9 @@
 @models = %w[
+  PremisesAuditNote
+  TrainingRecord
+  Relationship
+  EmailAddress
   EmploymentDetail
-  MdmPolicy
-  ActionPlanAlert
-  ActionPlanReminder
   Agency
   MedicineAlertUser
   GroupcallAuthorisation
@@ -54,7 +55,6 @@
   Capture
   Assignment
   NegativeCapture
-  EmailAddress
   ConcernAlert
   ConcernReply
   TelephoneNumber
