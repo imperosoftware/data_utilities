@@ -10,49 +10,6 @@ require_relative 'models'
 @school_id = 20_996
 @dump_files = []
 
-def camel_to_snake_case(word)
-  # Convert CamelCase to snake_case
-  word.gsub(/::/, '/')
-      .gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-      .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-      .tr('-', '_')
-      .downcase
-end
-
-def pluralize(word)
-  case word
-  when 'security'
-    'securities'
-  when 'child'
-    'children'
-  when 'address'
-    'addresses'
-  when 'address'
-    'addresses'
-  when 'policy'
-    'policies'
-  when 'access'
-    'accesses'
-  when 'agency'
-    'agencies'
-  when 'person'
-    'people'
-  when 'reply'
-    'replies'
-  when 'status'
-    'statuses'
-  else
-    word + 's'
-  end
-end
-
-def convert_and_pluralize(word)
-  snake_case_word = camel_to_snake_case(word)
-  parts = snake_case_word.split('_')
-  parts[-1] = pluralize(parts[-1])
-  parts.join('_')
-end
-
 # Method to find all dependent associations
 def dependent_associations(model)
   model.reflect_on_all_associations.select do |association|
@@ -126,6 +83,15 @@ def dump_users
   system(cmd)
   process_result($?.exitstatus, dump_file)
 end
+
+def dump_permissions_user_groups
+  dump_file = 'restore_permissions_user_groups.sql'
+  sql = "SELECT id FROM user_groups WHERE school_id = #{@school_id}"
+  cmd = %(mysqldump -h #{@db_host} --ssl_ca=/usr/local/share/ca-certificates/azure_mariadb_ca.pem -u #{@db_user} -p#{@db_password} --no-create-info --lock-all-tables #{@db_name} permissions_user_groups --where="user_group_id IN (#{sql})" > #{dump_file} )
+  system(cmd)
+  process_result($?.exitstatus, dump_file)
+end
+
 ##### main run #####
 
 dump_core_tables
@@ -133,6 +99,7 @@ dump_school_table
 dump_group_members
 dump_children
 dump_users
+dump_permissions_user_groups
 
 output_file = 'total_dump.sql'
 
