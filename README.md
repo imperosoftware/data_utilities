@@ -6,7 +6,6 @@ change the following script variables
 
 ```ruby
 @db_host = <source_db_host>
-@db_user = <source_db_user>
 @db_name = <source_db_name>
 @school_id = <school_id_to_restore>
 ```
@@ -16,7 +15,7 @@ change the following script variables
 
 ```bash
 $> cd <platform project directory>
-$> DBPASSWD=<source_db_passwd> bin/rails runner restore_school.rb
+$> DBUSR=<<source_db_user> DBPASSWD=<source_db_passwd> bin/rails runner restore_school.rb
 ```
 
 this will generate a `total_dump.sql` file. Then you can run:
