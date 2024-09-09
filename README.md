@@ -15,7 +15,7 @@ change the following script variables
 
 ```bash
 $> cd <platform project directory>
-$> DBUSR=<<source_db_user> DBPASSWD=<source_db_passwd> bin/rails runner restore_school.rb
+$> DBUSR=<source_db_user> DBPASSWD=<source_db_passwd> bin/rails runner restore_school.rb
 ```
 
 this will generate a `total_dump.sql` file. Then you can run:
