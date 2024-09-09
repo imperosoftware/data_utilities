@@ -4,7 +4,7 @@ require_relative 'config/environment'
 require_relative 'models'
 
 @db_host = 'sm-uk-west-integration-platform.mariadb.database.azure.com'
-@db_user = 'totesnotadmin@sm-uk-west-integration-platform'
+@db_user = ENV.fetch('DBUSR')
 @db_password = ENV.fetch('DBPASSWD')
 @db_name = 'safeguardingmonitor_integration2'
 @school_id = 20_996
